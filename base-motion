@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title></title>
+    <style>
+        *{
+            margin:0;
+            padding:0;
+        }
+        body{
+            font-size: 12px;
+        }
+        #circle{
+            width:100px;
+            height:100px;
+            background: red;
+            position:absolute;
+            left:0px;
+            top:0px;
+            border-radius:50px;
+        }
+        #wrap{
+            width:500px;
+            height:500px;
+            border-right:1px solid red;
+        }
+    </style>
+</head>
+<body>
+    <div id="wrap"></div>
+    <div id="circle"></div>
+    <script>
+        var oDiv = document.getElementById("circle"),
+            vx = 20,
+            vy = 5,
+            cw = document.documentElement.clientWidth || document.body.clientWidth,
+            ch = document.documentElement.clientHeight || document.body.clientHeight,
+            r = 50,
+            oldVy = 0,
+            rad = 0;
+
+      // 重力
+        setInterval(function(){
+            var left = oDiv.offsetLeft,
+                top = oDiv.offsetTop;
+
+            vy += 0.5;
+
+            left += vx;
+            top += vy;
+
+            oDiv.style.left = left + "px";
+            oDiv.style.top = top + "px";
+
+        },1000/60);
+
+        边界检测配合重力以及能量损失
+                 setInterval(function(){
+                    var left = oDiv.offsetLeft,
+                        top = oDiv.offsetTop;
+        
+                     vy += 0.5;
+        
+                     left += vx;
+                     top += vy;
+        
+                     //x边界检测
+                     if(left >= cw - 2*r){
+                         left = cw - 2*r;
+                         vx *= -0.8;
+                     }else if(left <= 0){
+                         left = 0;
+                       vx *= -0.8;
+                     }
+        
+                    if(top >= ch - 2*r){
+                        top = ch - 2*r;
+                        vy *= -0.8;
+                    }else if(top <= 0){
+                        top = 0;
+                        vy *= -0.8;
+                    }
+             oDiv.style.left = left + "px";
+             oDiv.style.top = top + "px";
+
+         },1000/60);
+
+
+          //投掷效果
+          function shot(target,vx,vy){
+
+         var oldVy;
+
+         var timer = setInterval(function(){
+                 var left = target.offsetLeft,
+                     top = target.offsetTop;
+
+                 //vy += 0.5;
+                 top += vy;
+
+                 left += vx;
+                 vy += 0.5;
+
+                 //x边界检测
+                 if(left >= cw - 2*r){
+                     left = cw - 2*r;
+                     vx *= -0.8;
+                 }else if(left <= 0){
+                     left = 0;
+                     vx *= -0.8;
+                 }
+
+                 if(top >= ch - 2*r){
+                     top = ch - 2*r;
+                     vy *= -0.8;
+                 }else if(top <= 0){
+                     top = 0;
+                     vy *= -0.8;
+                 }
+
+                 if(Math.abs(oldVy - vy) < 10e-3){
+                     target.style.top = ch - 2*r + "px";
+                     clearInterval(timer);
+                 }
+
+                 oldVy = vy;
+
+                target.style.top = top + "px";
+                target.style.left = left + "px";
+
+         },1000/60);
+    }
+
+
+          //拖拽
+          function drag(target){
+              var vx = 0,
+                  oldX = 0,
+                  vy = 0,
+                  oldY = 0;
+
+                addEvent(target,"mousedown",function(ev){
+                    var mouseX = ev.clientX - target.offsetLeft,
+                        mouseY = ev.clientY - target.offsetTop;
+
+                    addEvent(document,"mousemove",moveHandler);
+
+                    addEvent(target,"mouseup",upHandler);
+
+                    function moveHandler(ev){
+                        var top = ev.clientY,
+                            left = ev.clientX;
+
+                        vx = left - oldX;
+                        oldX = left;
+
+                        vy = top - oldY;
+                        oldY = top;
+
+                        target.style.top = top - mouseY + "px";
+                        target.style.left = left - mouseX + "px";
+
+                        return false;
+                    }
+
+                    function upHandler(){
+                        removeEvent(document,"mousemove",moveHandler);
+                        removeEvent(target,"mouseup",upHandler);
+
+                        shot(target,vx,vy);
+                    }
+                })
+          }
+
+          //事件注册函数
+          function addEvent(target,eventName,callback){
+                var fnStr = callback.toString().replace(/\s+/g,'');
+
+                target[fnStr] = handler;
+
+                if(target.addEventListener){
+                    target.addEventListener(eventName,handler,false);
+                }else if(target.attachEvent){
+                    target.attachEvent("on"+eventName,handler);
+                }else{
+                    target["on"+eventName] = handler;
+                }
+
+              function handler(ev){
+                  var event = ev || window.event,
+                      stopPropagation = event.stopPropagation,
+                      preventDefault = event.preventDefault;
+
+                  event.target = event.target || event.srcElement;
+                  event.currentTarget = event.currentTarget || target;
+                  event.stopPropagation = function(){
+                      if(!event.stopPropagation){
+                            event.cancelBubble = true;
+                      }else{
+                            stopPropagation.call(event);
+                      }
+                  };
+                  event.preventDefault = function(){
+                      if(!event.preventDefault){
+                          event.returnValue = false;
+                      }else{
+                          preventDefault.call(event);
+                      }
+                  }
+
+                  var flag = callback.call(target,event);
+
+                  if(flag === false){
+                      event.stopPropagation();
+                      event.preventDefault();
+                  }
+              }
+          }
+
+          //事件取绑
+          function removeEvent(target,eventName,callback){
+              var fnStr = callback.toString().replace(/\s+/g,'');
+
+              var handler = target[fnStr];
+
+              if(target.removeEventListener){
+                    target.removeEventListener(eventName,handler,false);
+              }else if(target.detachEvent){
+                    target.detachEvent("on"+eventName,handler);
+              }else{
+                    target["on"+eventName] = null;
+              }
+
+          }
+
+
+          drag(oDiv);
+
+        var requestAnimationFrame = webkitRequestAnimationFrame ||
+                                    mozRequestAnimationFrame ||
+                                    oRequestAnimationFrame ||
+                                    msRequestAnimationFrame ||
+                                    setTimeout;、
+
+        setInterval(function(){
+            rad += 0.1;
+
+            var x = Math.sin(rad)*50 + 300,
+                y = Math.cos(rad)*200 + 300;
+
+            oDiv.style.top = y + "px";
+            oDiv.style.left = x + "px";
+
+        },1000/60);
+
+    //匀速运动
+    function constant(target,json,speed,callback){
+        var timeScale = 1000 / 60,
+            count = speed / timeScale,
+            begin,scale;
+
+        if(target.timer){
+            clearInterval(target.timer);
+        }
+
+        //初始化步长值
+        for(var key in json){
+            begin = parseFloat(window.getComputedStyle(target,null)[key]);
+            scale = (json[key] - begin) / count;
+            target[key] = scale;
+        }
+
+        target.timer = setInterval(function(){
+            for(var key in json){
+                var oldValue,newValue;
+
+                oldValue = parseFloat(window.getComputedStyle(target,null)[key]);
+                newValue = oldValue + target[key];
+
+                if(Math.abs(newValue - json[key]) < 1){
+                    target.style[key] = json[key] + "px";
+                    clearInterval(target.timer);
+
+                    if(typeof callback == "function"){
+                        callback();
+                    }
+                }
+
+                target.style[key] = newValue + "px";
+            }
+        },timeScale);
+    };
+
+
+    var oDiv = document.getElementById("circle");
+
+    constant(oDiv,{
+        "left" : 500,
+        "top" : 200,
+        width:300,
+        height:50
+    },1000)
+
+
+   // 减速运动
+    function sub(target,json,callback){
+        var timeScale = 1000 / 60;
+
+        if(target.timer){
+            clearInterval(target.timer);
+        }
+
+        target.timer = setInterval(function(){
+            var stop = true;
+            for(var key in json){
+                var oldValue,newValue,scale;
+
+                oldValue = parseFloat(window.getComputedStyle(target,null)[key]);
+                scale = (json[key] - oldValue) / 10;
+                newValue = oldValue + scale;
+
+                if(oldValue != json[key]){
+                    stop = false;
+                }else{
+                    continue;
+                }
+
+                if(Math.abs(newValue - json[key]) < 1){
+                    target.style[key] = json[key] + "px";
+                }
+
+                target.style[key] = newValue + "px";
+            }
+
+            if(stop){
+                clearInterval(target.timer);
+                if(typeof callback == "function"){
+                    callback();
+                }
+            }
+        },timeScale);
+    }
+
+    var oDiv = document.getElementById("circle");
+    sub(oDiv,{
+		borderRadius:300
+    })
+
+
+    //加速运动
+    function add(target,json,fn){
+        var timeScale = 1000 / 60,
+            scale = 10,
+            begin;
+
+        if(target.timer){
+            clearInterval(target.timer);
+        }
+
+        for(var key in json){
+            begin = parseFloat(window.getComputedStyle(target,null)[key]);
+            target[key] = (json[key] - begin) / scale;
+        }
+
+        target.timer = setInterval(function(){
+            var oldValue,newValue,speed,
+                stop = true;
+
+            for(var key in json){
+                oldValue = parseFloat(window.getComputedStyle(target,null)[key]);
+                speed = target[key] - (json[key] - oldValue) / 10;
+
+                if(oldValue != json[key]){
+                    stop = false;
+                }else{
+                    continue;
+                }
+
+                if(!speed){
+                    speed = (json[key] - oldValue) < 0 ? -5 : 5;
+                }
+
+                if(Math.abs(oldValue - json[key]) < 1 || Math.abs(target[key] - speed) < 5){
+                    target.style[key] = json[key] + "px";
+                }else{
+                    newValue = speed + oldValue;
+                    target.style[key] = newValue + "px";
+                }
+            }
+
+            if(stop){
+                clearInterval(target.timer);
+                if(typeof fn == "function"){
+                    fn();
+                }
+            }
+
+        },timeScale);
+    }
+
+    add(oDiv,{"left":500,"top":400});
+
+
+    //弹性运动
+    function dap(target,json,fn){
+        var timeScale = 20;
+
+        if(target.timer){
+            clearInterval(target.timer);
+        }
+
+        for(var key in json){
+            target[key] = 0;
+        }
+
+        target.timer = setInterval(function(){
+            var oldValue,newValue,
+                stop = true;
+
+            for(var key in json){
+                oldValue = parseFloat(window.getComputedStyle(target,null)[key]);
+                target[key] += (json[key] - oldValue) / 10;
+                target[key] *= 0.7;
+
+                if(oldValue != json[key]){
+                    stop = false;
+                }else{
+                    continue;
+                }
+
+                if(Math.abs(oldValue - json[key]) < 1){
+                    target.style[key] = json[key] + "px";
+                }else{
+                    newValue = oldValue + target[key];
+                    target.style[key] = newValue + "px";
+                }
+            }
+
+            if(stop){
+                clearInterval(target.timer);
+
+                if(typeof fn == "function"){
+                    fn();
+                }
+            }
+
+        },timeScale);
+    }
+
+    dap(oDiv,{"left":500,"top":300});
+
+    </script>
+</body>
+</html>

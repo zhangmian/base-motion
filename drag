@@ -1,0 +1,39 @@
+      //拖拽
+        function drag(target){
+            var vx = 0,
+                    oldX = 0,
+                    vy = 0,
+                    oldY = 0;
+
+            addEvent(target,"mousedown",function(ev){
+                var mouseX = ev.clientX - target.offsetLeft,
+                        mouseY = ev.clientY - target.offsetTop;
+
+                addEvent(document,"mousemove",moveHandler);
+
+                addEvent(target,"mouseup",upHandler);
+
+                function moveHandler(ev){
+                    var top = ev.clientY,
+                            left = ev.clientX;
+
+                    vx = left - oldX;
+                    oldX = left;
+
+                    vy = top - oldY;
+                    oldY = top;
+
+                    target.style.top = top - mouseY + "px";
+                    target.style.left = left - mouseX + "px";
+
+                    return false;
+                }
+
+                function upHandler(){
+                    removeEvent(document,"mousemove",moveHandler);
+                    removeEvent(target,"mouseup",upHandler);
+
+                    shot(target,vx,vy);
+                }
+            })
+        }

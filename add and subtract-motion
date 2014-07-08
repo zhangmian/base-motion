@@ -1,0 +1,97 @@
+ //减速运动
+function sub(target,json,callback){
+    var timeScale = 1000 / 60;
+
+    if(target.timer){
+        clearInterval(target.timer);
+    }
+
+    target.timer = setInterval(function(){
+        var stop = true;
+        for(var key in json){
+            var oldValue,newValue,scale;
+
+            oldValue = parseFloat(window.getComputedStyle(target,null)[key]);
+            scale = (json[key] - oldValue) / 10;
+            newValue = oldValue + scale;
+
+            if(oldValue != json[key]){
+                stop = false;
+            }else{
+                continue;
+            }
+
+            if(Math.abs(newValue - json[key]) < 1){
+                target.style[key] = json[key] + "px";
+            }
+
+            target.style[key] = newValue + "px";
+        }
+
+        if(stop){
+            clearInterval(target.timer);
+            if(typeof callback == "function"){
+                callback();
+            }
+        }
+    },timeScale);
+}
+
+var oDiv = document.getElementById("circle");
+sub(oDiv,{
+	borderRadius:300
+})
+
+
+//加速运动
+function add(target,json,fn){
+    var timeScale = 1000 / 60,
+        scale = 10,
+        begin;
+
+    if(target.timer){
+        clearInterval(target.timer);
+    }
+
+    for(var key in json){
+        begin = parseFloat(window.getComputedStyle(target,null)[key]);
+        target[key] = (json[key] - begin) / scale;
+    }
+
+    target.timer = setInterval(function(){
+        var oldValue,newValue,speed,
+            stop = true;
+
+        for(var key in json){
+            oldValue = parseFloat(window.getComputedStyle(target,null)[key]);
+            speed = target[key] - (json[key] - oldValue) / 10;
+
+            if(oldValue != json[key]){
+                stop = false;
+            }else{
+                continue;
+            }
+
+            if(!speed){
+                speed = (json[key] - oldValue) < 0 ? -5 : 5;
+            }
+
+            if(Math.abs(oldValue - json[key]) < 1 || Math.abs(target[key] - speed) < 5){
+                target.style[key] = json[key] + "px";
+            }else{
+                newValue = speed + oldValue;
+                target.style[key] = newValue + "px";
+            }
+        }
+
+        if(stop){
+            clearInterval(target.timer);
+            if(typeof fn == "function"){
+                fn();
+            }
+        }
+
+    },timeScale);
+}
+
+add(oDiv,{"left":500,"top":400});

@@ -44,7 +44,7 @@
             var left = oDiv.offsetLeft,
                 top = oDiv.offsetTop;
 
-            vy += 0.5;
+            vy += 0.5;//这里就是模拟的加重力
 
             left += vx;
             top += vy;
@@ -67,7 +67,7 @@
                      //x边界检测
                      if(left >= cw - 2*r){
                          left = cw - 2*r;
-                         vx *= -0.8;
+                         vx *= -0.8;//这里模拟的能量损失
                      }else if(left <= 0){
                          left = 0;
                        vx *= -0.8;
@@ -81,7 +81,7 @@
                         vy *= -0.8;
                     }
              oDiv.style.left = left + "px";
-             oDiv.style.top = top + "px";
+             oDiv.style.top = top + "px";//一定要将px加上
 
          },1000/60);
 
